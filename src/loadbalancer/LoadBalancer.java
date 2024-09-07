@@ -17,8 +17,9 @@ public class LoadBalancer {
     private Selector selector;
     private ExecutorService threadPool;
 
-    public LoadBalancer(int port, String address, int maxQueue, DistributionAlgorithm algorithm, List<ServerConnection> servers) {
-        
+    public LoadBalancer(int port, String address, int maxQueue, DistributionAlgorithm algorithm,
+            List<ServerConnection> servers) {
+
         this.algorithm = algorithm;
         this.threadPool = Executors.newFixedThreadPool(MAX_THREADS);
         createServerSocket(port, address, maxQueue);
@@ -26,19 +27,19 @@ public class LoadBalancer {
     }
 
     private void createServerSocket(int port, String address, int maxQueue) {
-        
-        if(connectionListener != null) return;
+
+        if (connectionListener != null)
+            return;
 
         try {
             this.connectionListener = ServerSocketChannel.open();
             this.connectionListener.configureBlocking(false);
             this.connectionListener.bind(new InetSocketAddress(address, port), maxQueue);
-            
+
             this.selector = Selector.open();
 
             this.connectionListener.register(selector, SelectionKey.OP_ACCEPT);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new RuntimeException();
         }
 
@@ -46,44 +47,47 @@ public class LoadBalancer {
 
     public void start() {
 
-        while(true){
+        while (true) {
             try {
-                if(selector.select() == 0) continue;
-                
-                for(SelectionKey key : selector.selectedKeys()){
+                if (selector.select() == 0)
+                    continue;
 
-                    if(key.isAcceptable() && key.channel() instanceof ServerSocketChannel){
+                for (SelectionKey key : selector.selectedKeys()) {
 
-                        SocketChannel client = connectionListener.accept(); //connectionListener is the only channel registered for accepting connections
+                    if (key.isAcceptable() && key.channel() instanceof ServerSocketChannel) {
+
+                        SocketChannel client = connectionListener.accept(); // connectionListener is the only channel
+                                                                            // registered for accepting connections
 
                         client.configureBlocking(false);
                         client.register(selector, SelectionKey.OP_READ);
-                        
-                    }else if(key.isReadable() && key.channel() instanceof SocketChannel){ //handle client channels
+
+                    } else if (key.isReadable() && key.channel() instanceof SocketChannel) { // handle client channels
                         SocketChannel client = (SocketChannel) key.channel();
 
                         ByteBuffer request = ByteBuffer.allocate(Integer.BYTES).clear();
                         var bytesRead = client.read(request);
 
-                        if(bytesRead == -1){
+                        if (bytesRead == -1) {
                             client.close();
                             continue;
                         }
 
                         request.flip();
-                        RequestPayload payload = new RequestPayload(client.getLocalAddress().toString(), request.getInt());
-                        
+                        RequestPayload payload = new RequestPayload(client.getLocalAddress().toString(),
+                                request.getInt());
+
                         threadPool.submit(() -> {
-                                ByteBuffer response = algorithm.nextServer().request(payload);
+                            ByteBuffer response = algorithm.nextServer().request(payload);
 
-                                try{
-                                    while (response.hasRemaining()) client.write(response);
-                                } catch (Exception e){
-                                    throw new RuntimeException();
-                                }
-
+                            try {
+                                while (response.hasRemaining())
+                                    client.write(response);
+                            } catch (Exception e) {
+                                throw new RuntimeException();
                             }
-                        );
+
+                        });
 
                         client.close();
                     }
