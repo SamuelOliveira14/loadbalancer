@@ -2,19 +2,19 @@ package loadbalancer;
 
 import java.nio.ByteBuffer;
 
-public class Payload {
+public class ResquestPayload {
     private byte[] ip; // the first byte is the left-most IP value, IPv4
     private int time;
 
     // must be a non-flipped buffer
-    public Payload(ByteBuffer buf) {
+    public ResquestPayload(ByteBuffer buf) {
         ip = new byte[4];
         buf.flip();
         buf.get(ip, 0, 4);
         time = buf.getInt();
     }
 
-    public Payload(String ipStr, int time)
+    public ResquestPayload(String ipStr, int time)
     {
         String[] values = ipStr.split("\\.");
         ip = new byte[4];
