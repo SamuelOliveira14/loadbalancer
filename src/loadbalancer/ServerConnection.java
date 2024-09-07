@@ -37,7 +37,7 @@ public class ServerConnection {
     public ByteBuffer request(RequestPayload payload) {
 
         var connectionChannel = this.getSocket();
-        var requestBuffer = payload.toByteBuffer().flip();
+        var requestBuffer = payload.toByteBuffer();
         
         try{
             while (requestBuffer.hasRemaining()) connectionChannel.write(requestBuffer);

@@ -5,14 +5,12 @@ import java.util.List;
 public class RoundRobin implements DistributionAlgorithm {
     
     private int currentIndex = 0;
-    private List<ServerConnection> servers;
 
-    public RoundRobin(List<ServerConnection> servers) {
-        this.servers = servers;
+    public RoundRobin() {
     }
 
     @Override
-    public ServerConnection nextServer() {
+    public ServerConnection nextServer(List<ServerConnection> servers) {
         currentIndex = (currentIndex + 1) % servers.size();
         return servers.get(currentIndex);
     }
