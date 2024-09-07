@@ -34,7 +34,7 @@ public class ServerConnection {
      * @param payload
      * @return Flipped ByteBuffer with response from server
      */
-    public ByteBuffer request(Payload payload) {
+    public ByteBuffer request(RequestPayload payload) {
 
         var connectionChannel = this.getSocket();
         var requestBuffer = payload.toByteBuffer().flip();
