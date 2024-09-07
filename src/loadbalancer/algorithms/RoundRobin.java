@@ -14,5 +14,9 @@ public class RoundRobin implements DistributionAlgorithm {
         currentIndex = (currentIndex + 1) % servers.size();
         return servers.get(currentIndex);
     }
+
+    public void reset() {
+        currentIndex = 0;
+    }
     
 }

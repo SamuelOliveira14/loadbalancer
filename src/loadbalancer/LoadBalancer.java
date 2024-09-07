@@ -31,6 +31,7 @@ public class LoadBalancer {
 
     public void addServer(String addr, int port) {
         workServers.add(new ServerConnection(port, addr));
+        this.algorithm.reset();
     }
 
     private void createServerSocket(int port, String address, int maxQueue) {
@@ -64,10 +65,10 @@ public class LoadBalancer {
                     iterator.remove();
 
                     if (key.isAcceptable()) {
-                        SocketChannel client = connectionListener.accept(); // connectionListener is the only channel
-                                                                            // registered for accepting connections
+                        SocketChannel client = connectionListener.accept(); // connectionListener is the only channel registered for accepting connections
 
-                        System.out.println("Connection accepted");
+                        System.out.println("Connection accepted - " + client.getRemoteAddress().toString());
+
                         client.configureBlocking(false);
                         client.register(selector, SelectionKey.OP_READ);
 
@@ -85,8 +86,7 @@ public class LoadBalancer {
                         request.flip();
                         int requestValue =  request.getInt();
                         System.out.println("Got request value of " + requestValue);
-                        RequestPayload payload = new RequestPayload("127.0.0.1",
-                        requestValue);
+                        RequestPayload payload = new RequestPayload(client.getLocalAddress().toString().replace("\\", ""), requestValue);
 
                         threadPool.submit(() -> {
                             ByteBuffer response = algorithm.nextServer(workServers).request(payload);
@@ -111,8 +111,8 @@ public class LoadBalancer {
     }
 
     public static void main(String args[]) {
-        DistributionAlgorithm alg = new RoundRobin();
-        LoadBalancer lb = new LoadBalancer(8000, "127.0.0.1", 20, alg);
+        DistributionAlgorithm algorithm = new RoundRobin();
+        LoadBalancer lb = new LoadBalancer(8000, "127.0.0.1", 20, algorithm);
 
         lb.addServer("127.0.0.1", 9000);
         lb.addServer("127.0.0.1", 9001);

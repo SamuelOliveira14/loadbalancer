@@ -7,4 +7,6 @@ import loadbalancer.ServerConnection;
 public interface DistributionAlgorithm {
     
     public ServerConnection nextServer(List<ServerConnection> servers);
+
+    public void reset();
 }
