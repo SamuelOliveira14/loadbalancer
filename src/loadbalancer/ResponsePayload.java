@@ -34,12 +34,13 @@ public class ResponsePayload {
 
     /**
      * 
-     * @return a non-flipped ByteBuffer with capacity 8, and position at the end
+     * @return a flipped ByteBuffer with capacity 8, and position at the end
      */
     public ByteBuffer toByteBuffer() {
         ByteBuffer buf = ByteBuffer.allocate(8);
         buf.put(ip);
         buf.putInt(response);
+        buf.flip();
         return buf;
     }
 }

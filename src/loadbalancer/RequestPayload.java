@@ -34,24 +34,25 @@ public class RequestPayload {
 
     /**
      * 
-     * @return a non-flipped ByteBuffer with capacity 8, and position at the end
+     * @return a flipped ByteBuffer with capacity 8, and position at the end
      */
     public ByteBuffer toByteBuffer() {
         ByteBuffer buf = ByteBuffer.allocate(8);
         buf.put(ip);
         buf.putInt(time);
+        buf.flip();
         return buf;
     }
 
     // public static void main(String[] args) {
-    //     Payload p1 = new Payload("192.168.1.2", 35);
+    //     RequestPayload p1 = new RequestPayload("192.168.1.2", 35);
 
     //     assert(p1.getIP().equals("192.168.1.2"));
     //     assert(p1.getTime() == 35);
 
     //     ByteBuffer buf = p1.toByteBuffer();
     //     assert(buf.remaining() == 8);
-    //     Payload p2 = new Payload(buf);
+    //     RequestPayload p2 = new RequestPayload(buf);
 
     //     assert(p2.getIP().equals("192.168.1.2"));
     //     assert(p2.getTime() == 35);
