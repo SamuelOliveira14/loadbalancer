@@ -14,6 +14,7 @@ public class WorkServer {
     private Selector selector;
     private ServerSocketChannel serverSocketChannel;
     private ExecutorService threadPool = Executors.newFixedThreadPool(MAX_THREADS);
+    private int load = 0;
 
     public WorkServer(int port) {
         try {
@@ -58,21 +59,30 @@ public class WorkServer {
                         request.flip();
 
                         RequestPayload payload = new RequestPayload(request);
-                        if (payload.getTime() == -1) {
-                            var res = new ResponsePayload(payload.getIP(),
-                                    ((ThreadPoolExecutor) threadPool).getActiveCount()).toByteBuffer();
-                            while (res.hasRemaining()) {
-                                client.write(res);
+                        if (payload.getTime() == -1 || payload.getTime() == -2) {
+                            int toSend = 0;
+                            if (payload.getTime() == -1) {
+                                toSend = ((ThreadPoolExecutor) threadPool).getActiveCount();
+                            } else {
+                                toSend = getLoad();
+                            }
+
+                            var response = new ResponsePayload(payload.getIP(), toSend).toByteBuffer();
+                            while (response.hasRemaining()) {
+                                client.write(response);
                             }
                             client.close();
                         } else {
                             threadPool.submit(() -> {
                                 try {
+                                    int time = payload.getTime();
+                                    addLoad(time);
                                     var response = handleRequest(payload).toByteBuffer();
                                     while (response.hasRemaining()) {
                                         client.write(response);
                                     }
                                     client.close();
+                                    removeLoad(time);
                                 } catch (Exception e) {
                                     e.printStackTrace();
                                     throw new RuntimeException();
@@ -105,5 +115,17 @@ public class WorkServer {
     public static void main(String[] args) {
         var server = new WorkServer(Integer.parseInt(args[0]));
         server.run();
+    }
+
+    private synchronized void addLoad(int dif) {
+        load += dif;
+    }
+
+    private synchronized void removeLoad(int dif) {
+        load -= dif;
+    }
+
+    private synchronized int getLoad() {
+        return load;
     }
 }
