@@ -56,5 +56,19 @@ public class ServerConnection {
             throw new RuntimeException();
         }
     }
+
+    public int getLoad(){
+        RequestPayload payload = new RequestPayload("0.0.0.0", -2);
+        ByteBuffer buf = this.request(payload);
+
+        return new ResponsePayload(buf).getResponse();
+    }
+
+    public int getNumThreads(){
+        RequestPayload payload = new RequestPayload("0.0.0.0", -1);
+        ByteBuffer buf = this.request(payload);
+
+        return new ResponsePayload(buf).getResponse();
+    }
     
 }
