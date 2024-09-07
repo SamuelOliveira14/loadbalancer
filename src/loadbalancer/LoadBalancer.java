@@ -64,12 +64,13 @@ public class LoadBalancer {
 
                         ByteBuffer request = ByteBuffer.allocate(Integer.BYTES).clear();
                         var bytesRead = client.read(request);
-                        
+
                         if(bytesRead == -1){
                             client.close();
                             continue;
                         }
-                        
+
+                        request.flip();
                         RequestPayload payload = new RequestPayload(client.getLocalAddress().toString(), request.getInt());
                         
                         threadPool.submit(() -> {
