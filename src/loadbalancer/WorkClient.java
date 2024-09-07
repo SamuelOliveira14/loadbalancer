@@ -1,12 +1,11 @@
-package loadbalancer.server;
+package loadbalancer;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.TimeUnit;
-
-import loadbalancer.RequestPayload;
-import loadbalancer.ResponsePayload;
 
 public class WorkClient {
     private SocketChannel socketChannel;
@@ -57,7 +56,8 @@ public class WorkClient {
                     RequestPayload rPayload = new RequestPayload(buffer);
 
                     var response = processRequest(rPayload).toByteBuffer();
-                    while (response.hasRemaining()) socketChannel.write(response);
+                    while (response.hasRemaining())
+                        socketChannel.write(response);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -65,16 +65,29 @@ public class WorkClient {
         }
     }
 
-    public ResponsePayload processRequest(RequestPayload p)
-    {
+    public ResponsePayload processRequest(RequestPayload p) {
+        System.out.println(" Processing request " + p.getTime());
         int time = p.getTime();
         int returnVal = 0;
         try {
             TimeUnit.SECONDS.sleep(time);
-            returnVal = 2*time;
+            returnVal = 2 * time;
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        return new ResponsePayload(p.getIP(), 2*returnVal);
+        return new ResponsePayload(p.getIP(), 2 * returnVal);
+    }
+
+    public static void main(String args[]) {
+        try {
+            InetAddress host = InetAddress.getLocalHost();
+            int port = 9876;
+
+            var work = new WorkClient(host.getHostAddress(), port);
+            work.run();
+
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
     }
 }
