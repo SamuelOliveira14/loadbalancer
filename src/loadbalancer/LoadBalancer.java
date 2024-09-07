@@ -69,8 +69,6 @@ public class LoadBalancer {
                             client.close();
                             continue;
                         }
-
-                        request.flip();
                         
                         Payload payload = new Payload(client.getLocalAddress().toString(), request.getInt());
                         

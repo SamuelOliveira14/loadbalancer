@@ -6,7 +6,7 @@ public class Payload {
     private byte[] ip; // the first byte is the left-most IP value, IPv4
     private int time;
 
-    // must be a flipped buffer
+    // must be a non-flipped buffer
     public Payload(ByteBuffer buf) {
         ip = new byte[4];
         buf.flip();
