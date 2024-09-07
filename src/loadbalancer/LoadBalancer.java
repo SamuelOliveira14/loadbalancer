@@ -85,8 +85,10 @@ public class LoadBalancer {
 
                         request.flip();
                         int requestValue =  request.getInt();
-                        System.out.println("Got request value of " + requestValue);
-                        RequestPayload payload = new RequestPayload(client.getLocalAddress().toString().replace("\\", ""), requestValue);
+                        System.out.println("Got request value of " + requestValue);                        
+                        
+                        var clientAddress = client.getRemoteAddress().toString().replace("/", "").split(":")[0];
+                        RequestPayload payload = new RequestPayload(clientAddress, requestValue);
 
                         threadPool.submit(() -> {
                             ByteBuffer response = algorithm.nextServer(workServers).request(payload);

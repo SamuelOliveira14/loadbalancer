@@ -79,7 +79,6 @@ public class WorkServer {
 
         System.out.println("Finished, returning value is: " + returnVal);
         var res = new ResponsePayload(p.getIP(), returnVal);
-        System.out.println("Ctor, value is: " + res.getResponse());
         return res;
     }
 
