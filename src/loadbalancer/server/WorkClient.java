@@ -4,6 +4,8 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
+import loadbalancer.Payload;
+
 public class WorkClient {
     private SocketChannel socketChannel;
 
@@ -48,14 +50,9 @@ public class WorkClient {
                     break;
                 }
 
-                // If there's data to read, process it
                 if (bytesRead > 0) {
-                    buffer.flip(); // Switch buffer from write to read mode
-                    byte[] data = new byte[bytesRead];
-                    buffer.get(data); // Retrieve data from buffer
-
-                    String receivedMessage = new String(data);
-                    System.out.println("Received from server: " + receivedMessage);
+                    buffer.flip();
+                    Payload payload = new Payload(buffer);
                 }
             } catch (Exception e) {
                 e.printStackTrace();

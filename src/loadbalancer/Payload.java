@@ -6,14 +6,15 @@ public class Payload {
     private byte[] ip; // the first byte is the left-most IP value, IPv4
     private int time;
 
-    Payload(ByteBuffer buf) {
+    // must be a flipped buffer
+    public Payload(ByteBuffer buf) {
         ip = new byte[4];
         buf.flip();
         buf.get(ip, 0, 4);
         time = buf.getInt();
     }
 
-    Payload(String ipStr, int time)
+    public Payload(String ipStr, int time)
     {
         String[] values = ipStr.split("\\.");
         ip = new byte[4];
@@ -24,16 +25,16 @@ public class Payload {
         this.time = time;
     }
 
-    String getIP() {
+    public String getIP() {
         return Byte.toString(ip[0]) + "." +  Byte.toString(ip[1]) + "." +  Byte.toString(ip[2]) + "." +  Byte.toString(ip[3]);
     }
 
-    int getTime() {
+    public int getTime() {
         return time;
     }
 
     // returns a non-flipped ByteBuffer with capacity 8, and position at the end
-    ByteBuffer toByteBuffer() {
+    public ByteBuffer toByteBuffer() {
         ByteBuffer buf = ByteBuffer.allocate(8);
         buf.put(ip);
         buf.putInt(time);
