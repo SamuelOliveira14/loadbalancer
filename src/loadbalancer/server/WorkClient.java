@@ -4,7 +4,7 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
-import loadbalancer.ResquestPayload;
+import loadbalancer.RequestPayload;
 
 public class WorkClient {
     private SocketChannel socketChannel;
@@ -52,7 +52,7 @@ public class WorkClient {
 
                 if (bytesRead > 0) {
                     buffer.flip();
-                    ResquestPayload rPayload = new ResquestPayload(buffer);
+                    RequestPayload rPayload = new RequestPayload(buffer);
                 }
             } catch (Exception e) {
                 e.printStackTrace();

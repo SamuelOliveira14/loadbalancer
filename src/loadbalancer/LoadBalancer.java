@@ -70,7 +70,7 @@ public class LoadBalancer {
                             continue;
                         }
                         
-                        ResquestPayload payload = new ResquestPayload(client.getLocalAddress().toString(), request.getInt());
+                        RequestPayload payload = new RequestPayload(client.getLocalAddress().toString(), request.getInt());
                         
                         threadPool.submit(() -> {
                                 ByteBuffer response = algorithm.nextServer().request(payload);
