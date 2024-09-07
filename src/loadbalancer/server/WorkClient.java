@@ -3,8 +3,10 @@ package loadbalancer.server;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.util.concurrent.TimeUnit;
 
 import loadbalancer.RequestPayload;
+import loadbalancer.ResponsePayload;
 
 public class WorkClient {
     private SocketChannel socketChannel;
@@ -53,10 +55,26 @@ public class WorkClient {
                 if (bytesRead > 0) {
                     buffer.flip();
                     RequestPayload rPayload = new RequestPayload(buffer);
+
+                    var response = processRequest(rPayload).toByteBuffer();
+                    while (response.hasRemaining()) socketChannel.write(response);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
+    }
+
+    public ResponsePayload processRequest(RequestPayload p)
+    {
+        int time = p.getTime();
+        int returnVal = 0;
+        try {
+            TimeUnit.SECONDS.sleep(time);
+            returnVal = 2*time;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return new ResponsePayload(p.getIP(), 2*returnVal);
     }
 }

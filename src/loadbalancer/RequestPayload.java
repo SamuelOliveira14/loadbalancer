@@ -6,10 +6,9 @@ public class RequestPayload {
     private byte[] ip; // the first byte is the left-most IP value, IPv4
     private int time;
 
-    // must be a non-flipped buffer
+    // must be a flipped buffer
     public RequestPayload(ByteBuffer buf) {
         ip = new byte[4];
-        buf.flip();
         buf.get(ip, 0, 4);
         time = buf.getInt();
     }

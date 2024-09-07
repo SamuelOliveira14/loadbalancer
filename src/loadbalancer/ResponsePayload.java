@@ -6,10 +6,9 @@ public class ResponsePayload {
     private byte[] ip; // the first byte is the left-most IP value, IPv4
     private int response;
 
-    // must be a non-flipped buffer
+    // must be a flipped buffer
     public ResponsePayload(ByteBuffer buf) {
         ip = new byte[4];
-        buf.flip();
         buf.get(ip, 0, 4);
         response = buf.getInt();
     }
