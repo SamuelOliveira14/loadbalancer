@@ -7,11 +7,13 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public class WorkServer {
+    private final int MAX_THREADS = 100;
     private Selector selector;
     private ServerSocketChannel serverSocketChannel;
+    private ExecutorService threadPool = Executors.newFixedThreadPool(MAX_THREADS);
 
     public WorkServer(int port) {
         try {
@@ -42,9 +44,10 @@ public class WorkServer {
                         System.out.println("Accepted connection from client " + client.getRemoteAddress());
                         client.configureBlocking(false);
                         client.register(selector, SelectionKey.OP_READ);
+
                     } else if (key.isReadable()) {
                         SocketChannel client = (SocketChannel) key.channel();
-                        ByteBuffer request = ByteBuffer.allocate(1024).clear();
+                        ByteBuffer request = ByteBuffer.allocate(2*Integer.BYTES).clear();
                         int bytesRead = client.read(request);
 
                         if (bytesRead == -1) {
@@ -53,12 +56,21 @@ public class WorkServer {
                         }
 
                         request.flip();
-                        RequestPayload payload = new RequestPayload(request);
-                        var response = handleRequest(payload).toByteBuffer();
-                        while (response.hasRemaining()) {
-                            client.write(response);
-                        }
-                        client.close();
+
+                        threadPool.submit(()->{
+                            try {
+                                RequestPayload payload = new RequestPayload(request);
+                                var response = handleRequest(payload).toByteBuffer();
+                                while (response.hasRemaining()) {
+                                    client.write(response);
+                                }
+                                client.close();
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                                throw new RuntimeException();
+                            }
+                        });
+                        
                     }
                 }
             }
