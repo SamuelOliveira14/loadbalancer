@@ -1,93 +1,99 @@
 package loadbalancer;
 
-import java.io.*;
-import java.net.Inet4Address;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.ArrayList;
+import java.nio.channels.*;
+import java.net.InetSocketAddress;
 import java.util.List;
+import java.nio.ByteBuffer;
+import java.util.concurrent.*;
 
+import loadbalancer.algorithms.DistributionAlgorithm;
 
 public class LoadBalancer {
-    private DistributionAlgorithm algorithm;
-    private ServerSocket serverSocket;
-    private List<ServerConnection> servers;
 
-    
-    public LoadBalancer(int port, String address, int maxQueue, DistributionAlgorithm algorithm) {
-        
-        this.algorithm = algorithm;
-        this.servers = new ArrayList<ServerConnection>();
-        this.serverSocket = createServerSocket(port, address, maxQueue);
-    }
-    
+    private final int MAX_THREADS = 50;
+
+    private DistributionAlgorithm algorithm;
+    private ServerSocketChannel connectionListener = null;
+    private Selector selector;
+    private ExecutorService threadPool;
+
     public LoadBalancer(int port, String address, int maxQueue, DistributionAlgorithm algorithm, List<ServerConnection> servers) {
         
         this.algorithm = algorithm;
-        this.servers = servers;
-        this.serverSocket = createServerSocket(port, address, maxQueue);
+        this.threadPool = Executors.newFixedThreadPool(MAX_THREADS);
+        createServerSocket(port, address, maxQueue);
 
     }
 
-    private ServerSocket createServerSocket(int port, String address, int maxQueue) {
+    private void createServerSocket(int port, String address, int maxQueue) {
         
-        ServerSocket serverSocket = null;
-        try {
-            serverSocket = new ServerSocket(port, maxQueue, (Inet4Address) Inet4Address.getByName(address));
-            serverSocket.setReuseAddress(true);
-        } catch (Exception e) {
-            //handle exception
-        }
+        if(connectionListener != null) return;
 
-        return serverSocket;
+        try {
+            this.connectionListener = ServerSocketChannel.open();
+            this.connectionListener.configureBlocking(false);
+            this.connectionListener.bind(new InetSocketAddress(address, port), maxQueue);
+            
+            this.selector = Selector.open();
+
+            this.connectionListener.register(selector, SelectionKey.OP_ACCEPT);
+        }
+        catch (Exception e) {
+            throw new RuntimeException();
+        }
 
     }
 
     public void start() {
-        while(true) {
-            if (this.servers.isEmpty()) {
-                return;
-            }
-            try{
-                Socket client = serverSocket.accept();
-                ServerConnection connection = algorithm.nextServer();
 
-                //thread pool can be a better idea (https://docs.oracle.com/javase/tutorial/essential/concurrency/pools.html)
-                new Thread(
-                    () -> {
-                        try{
+        while(true){
+            try {
+                if(selector.select() == 0) continue;
+                
+                for(SelectionKey key : selector.selectedKeys()){
 
-                            BufferedInputStream clientInput = new BufferedInputStream(client.getInputStream());
-                            var response = connection.request(clientInput.readAllBytes()); //Don't know if this is the best way to read (prob not)...
+                    if(key.isAcceptable() && key.channel() instanceof ServerSocketChannel){
 
-                            BufferedOutputStream clientOutput = new BufferedOutputStream(client.getOutputStream()); //Buffer to write into client socket (bytes)
-                            // handle response...
+                        SocketChannel client = connectionListener.accept(); //connectionListener is the only channel registered for accepting connections
 
-                            clientInput.close();
-                            clientOutput.close();
+                        client.configureBlocking(false);
+                        client.register(selector, SelectionKey.OP_READ);
+                        
+                    }else if(key.isReadable() && key.channel() instanceof SocketChannel){ //handle client channels
+                        SocketChannel client = (SocketChannel) key.channel();
+
+                        ByteBuffer request = ByteBuffer.allocate(Integer.BYTES).clear();
+                        var bytesRead = client.read(request);
+                        
+                        if(bytesRead == -1){
                             client.close();
+                            continue;
+                        }
 
-                        }catch(Exception e){
-                            //handle exceptions...
-                        } 
+                        request.flip();
+                        
+                        Payload payload = new Payload(client.getLocalAddress().toString(), request.getInt());
+                        
+                        threadPool.submit(() -> {
+                                ByteBuffer response = algorithm.nextServer().request(payload);
+
+                                try{
+                                    while (response.hasRemaining()) client.write(response);
+                                } catch (Exception e){
+                                    throw new RuntimeException();
+                                }
+
+                            }
+                        );
+                        
                     }
-                ).start();
 
-            }catch(Exception e) {
-
+                    selector.selectedKeys().remove(key);
+                }
+            } catch (Exception e) {
+                throw new RuntimeException();
             }
         }
-
-    }
-
-    public void addServer(ServerConnection server) {
-        this.servers.add(server);
-        // Handle how DistributionAlgorithm works...
-    }
-
-    public void addServers(List<ServerConnection> servers) {
-        this.servers.addAll(servers);
-        // Handle how DistributionAlgorithm works...
     }
 
     @Override

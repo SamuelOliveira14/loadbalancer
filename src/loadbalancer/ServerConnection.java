@@ -1,54 +1,60 @@
 package loadbalancer;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.net.Socket;
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.channels.*;
 
 public class ServerConnection {
     
     private String address;
     private int port;
 
-
     public ServerConnection(int port, String address) {
         this.port = port;
         this.address = address;
     }
 
-    private Socket getSocket(){
-        Socket socket = null;
+    private SocketChannel getSocket(){
+        SocketChannel socket = null;
         try {
-            socket = new Socket(this.address, this.port);
+            socket = SocketChannel.open();
+            socket.connect(new InetSocketAddress(this.address, this.port));
+            while(!socket.finishConnect()) continue;
+
+            socket.configureBlocking(true);
         } catch (Exception e) {
-            //handle exception
+            throw new RuntimeException();
         }
         return socket;
     }
 
-    public byte[] request(byte[] requestData){
-        var connection = this.getSocket();
 
-        byte[] response = null;
+    /**
+     * 
+     * @param payload
+     * @return Flipped ByteBuffer with response from server
+     */
+    public ByteBuffer request(Payload payload) {
 
+        var connectionChannel = this.getSocket();
+        var requestBuffer = payload.toByteBuffer().flip();
+        
         try{
-            BufferedOutputStream connectionOutput = new BufferedOutputStream(connection.getOutputStream());
+            while (requestBuffer.hasRemaining()) connectionChannel.write(requestBuffer);
 
-            connectionOutput.write(requestData);
-            connectionOutput.flush();
+            ByteBuffer responseBuffer = ByteBuffer.allocate(8).clear(); // Check response ByteBuffer capacity with server later
 
-            BufferedInputStream connectionInput = new BufferedInputStream(connection.getInputStream());
-            //handle response...
+            var bytesRead = connectionChannel.read(responseBuffer);
+            if(bytesRead == -1){
+                return null; // TODO: return failure code
+            }
 
-            connectionInput.close();
-            connectionOutput.close();
-            connection.close();
+            connectionChannel.close();
+            return responseBuffer.flip();
 
-            
         }catch(Exception e){
-            // handle
+            throw new RuntimeException();
         }
-
-        return response;
     }
     
 }
