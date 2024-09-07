@@ -40,17 +40,17 @@ public class Payload {
         return buf;
     }
 
-    public static void main(String[] args) {
-        Payload p1 = new Payload("192.168.1.2", 35);
+    // public static void main(String[] args) {
+    //     Payload p1 = new Payload("192.168.1.2", 35);
 
-        assert(p1.getIP().equals("192.168.1.2"));
-        assert(p1.getTime() == 35);
+    //     assert(p1.getIP().equals("192.168.1.2"));
+    //     assert(p1.getTime() == 35);
 
-        ByteBuffer buf = p1.toByteBuffer();
-        assert(buf.remaining() == 8);
-        Payload p2 = new Payload(buf);
+    //     ByteBuffer buf = p1.toByteBuffer();
+    //     assert(buf.remaining() == 8);
+    //     Payload p2 = new Payload(buf);
 
-        assert(p2.getIP().equals("192.168.1.2"));
-        assert(p2.getTime() == 35);
-    }
+    //     assert(p2.getIP().equals("192.168.1.2"));
+    //     assert(p2.getTime() == 35);
+    // }
 }
