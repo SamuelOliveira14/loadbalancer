@@ -2,11 +2,14 @@ package loadbalancer;
 
 import java.nio.channels.*;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.nio.ByteBuffer;
 import java.util.concurrent.*;
 
 import loadbalancer.algorithms.DistributionAlgorithm;
+import loadbalancer.algorithms.RoundRobin;
 
 public class LoadBalancer {
 
@@ -16,14 +19,18 @@ public class LoadBalancer {
     private ServerSocketChannel connectionListener = null;
     private Selector selector;
     private ExecutorService threadPool;
+    private List<ServerConnection> workServers;
 
-    public LoadBalancer(int port, String address, int maxQueue, DistributionAlgorithm algorithm,
-            List<ServerConnection> servers) {
-
+    public LoadBalancer(int port, String address, int maxQueue, DistributionAlgorithm algorithm) {
         this.algorithm = algorithm;
         this.threadPool = Executors.newFixedThreadPool(MAX_THREADS);
+        this.workServers = new ArrayList<>();
         createServerSocket(port, address, maxQueue);
 
+    }
+
+    public void addServer(String addr, int port) {
+        workServers.add(new ServerConnection(port, addr));
     }
 
     private void createServerSocket(int port, String address, int maxQueue) {
@@ -46,23 +53,25 @@ public class LoadBalancer {
     }
 
     public void start() {
-
         while (true) {
             try {
                 if (selector.select() == 0)
                     continue;
 
-                for (SelectionKey key : selector.selectedKeys()) {
+                Iterator<SelectionKey> iterator = selector.selectedKeys().iterator();
+                while (iterator.hasNext()) {
+                    SelectionKey key = iterator.next();
+                    iterator.remove();
 
-                    if (key.isAcceptable() && key.channel() instanceof ServerSocketChannel) {
-
+                    if (key.isAcceptable()) {
                         SocketChannel client = connectionListener.accept(); // connectionListener is the only channel
                                                                             // registered for accepting connections
 
+                        System.out.println("Connection accepted");
                         client.configureBlocking(false);
                         client.register(selector, SelectionKey.OP_READ);
 
-                    } else if (key.isReadable() && key.channel() instanceof SocketChannel) { // handle client channels
+                    } else if (key.isReadable()) { // handle client channels
                         SocketChannel client = (SocketChannel) key.channel();
 
                         ByteBuffer request = ByteBuffer.allocate(Integer.BYTES).clear();
@@ -74,38 +83,40 @@ public class LoadBalancer {
                         }
 
                         request.flip();
-                        RequestPayload payload = new RequestPayload(client.getLocalAddress().toString(),
-                                request.getInt());
+                        int requestValue =  request.getInt();
+                        System.out.println("Got request value of " + requestValue);
+                        RequestPayload payload = new RequestPayload("127.0.0.1",
+                        requestValue);
 
                         threadPool.submit(() -> {
-                            ByteBuffer response = algorithm.nextServer().request(payload);
+                            ByteBuffer response = algorithm.nextServer(workServers).request(payload);
 
                             try {
-                                while (response.hasRemaining())
+                                while (response.hasRemaining()) {
                                     client.write(response);
+                                }
+                                client.close();
                             } catch (Exception e) {
+                                e.printStackTrace();
                                 throw new RuntimeException();
                             }
-
                         });
-
-                        client.close();
                     }
-
-                    selector.selectedKeys().remove(key);
                 }
             } catch (Exception e) {
+                e.printStackTrace();
                 throw new RuntimeException();
             }
         }
     }
 
-    @Override
-    protected void finalize() {
-        try {
-            // close resources...
-        } catch (Exception e) {
+    public static void main(String args[]) {
+        DistributionAlgorithm alg = new RoundRobin();
+        LoadBalancer lb = new LoadBalancer(8000, "127.0.0.1", 20, alg);
 
-        }
+        lb.addServer("127.0.0.1", 9000);
+        lb.addServer("127.0.0.1", 9001);
+
+        lb.start();
     }
 }

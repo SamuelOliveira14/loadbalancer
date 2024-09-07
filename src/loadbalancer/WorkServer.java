@@ -10,8 +10,6 @@ import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
 public class WorkServer {
-    public static int PORT = 9000;
-
     private Selector selector;
     private ServerSocketChannel serverSocketChannel;
 
@@ -86,7 +84,7 @@ public class WorkServer {
     }
 
     public static void main(String[] args) {
-        var server = new WorkServer(PORT);
+        var server = new WorkServer(Integer.parseInt(args[0]));
         server.run();
     }
 }
