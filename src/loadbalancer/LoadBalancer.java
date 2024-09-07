@@ -85,7 +85,8 @@ public class LoadBalancer {
 
                             }
                         );
-                        
+
+                        client.close();
                     }
 
                     selector.selectedKeys().remove(key);
