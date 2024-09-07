@@ -18,5 +18,4 @@ public class RoundRobin implements DistributionAlgorithm {
     public void reset() {
         currentIndex = 0;
     }
-    
 }

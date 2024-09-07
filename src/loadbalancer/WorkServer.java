@@ -47,7 +47,7 @@ public class WorkServer {
 
                     } else if (key.isReadable()) {
                         SocketChannel client = (SocketChannel) key.channel();
-                        ByteBuffer request = ByteBuffer.allocate(2*Integer.BYTES).clear();
+                        ByteBuffer request = ByteBuffer.allocate(2 * Integer.BYTES).clear();
                         int bytesRead = client.read(request);
 
                         if (bytesRead == -1) {
@@ -57,20 +57,28 @@ public class WorkServer {
 
                         request.flip();
 
-                        threadPool.submit(()->{
-                            try {
-                                RequestPayload payload = new RequestPayload(request);
-                                var response = handleRequest(payload).toByteBuffer();
-                                while (response.hasRemaining()) {
-                                    client.write(response);
-                                }
-                                client.close();
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                                throw new RuntimeException();
+                        RequestPayload payload = new RequestPayload(request);
+                        if (payload.getTime() == -1) {
+                            var res = new ResponsePayload(payload.getIP(),
+                                    ((ThreadPoolExecutor) threadPool).getActiveCount()).toByteBuffer();
+                            while (res.hasRemaining()) {
+                                client.write(res);
                             }
-                        });
-                        
+                            client.close();
+                        } else {
+                            threadPool.submit(() -> {
+                                try {
+                                    var response = handleRequest(payload).toByteBuffer();
+                                    while (response.hasRemaining()) {
+                                        client.write(response);
+                                    }
+                                    client.close();
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                    throw new RuntimeException();
+                                }
+                            });
+                        }
                     }
                 }
             }

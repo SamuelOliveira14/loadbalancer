@@ -117,7 +117,6 @@ public class LoadBalancer {
         LoadBalancer lb = new LoadBalancer(8000, "127.0.0.1", 20, algorithm);
 
         lb.addServer("127.0.0.1", 9000);
-        lb.addServer("127.0.0.1", 9001);
 
         lb.start();
     }
