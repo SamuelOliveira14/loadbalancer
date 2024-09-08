@@ -50,6 +50,7 @@ public class LoadBalancer {
             this.selector = Selector.open();
 
             this.connectionListener.register(selector, SelectionKey.OP_ACCEPT);
+            System.out.println("Listening on port " + port);
         } catch (Exception e) {
             throw new RuntimeException();
         }
