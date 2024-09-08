@@ -118,7 +118,7 @@ public class LoadBalancer {
 
     public static void main(String args[]) {
         DistributionAlgorithm algorithm = new RoundRobin();
-        LoadBalancer lb = new LoadBalancer(8000, "localhost", 0, algorithm);
+        LoadBalancer lb = new LoadBalancer(8000, "localhost", 2000, algorithm);
 
         int numServers = args.length;
         ArrayList<String> workServers = new ArrayList<String>();
@@ -128,6 +128,7 @@ public class LoadBalancer {
         }
 
         for (int i = 0; i < workServers.size(); ++i) {
+            System.out.println("Adding IP " + workServers.get(i));
             lb.addServer(workServers.get(i), 9000);
         }
 
