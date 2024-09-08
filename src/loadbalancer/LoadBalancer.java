@@ -120,11 +120,11 @@ public class LoadBalancer {
         DistributionAlgorithm algorithm = new RoundRobin();
         LoadBalancer lb = new LoadBalancer(8000, "localhost", 2000, algorithm);
 
-        int numServers = Integer.parseInt(args[0]);
+        int numServers = args.length;
         ArrayList<String> workServers = new ArrayList<String>();
 
         for (int i = 0; i < numServers; ++i) {
-            workServers.add(args[i+1]);
+            workServers.add(args[i]);
         }
 
         for (int i = 0; i < workServers.size(); ++i) {
