@@ -3,6 +3,7 @@ package loadbalancer;
 import java.nio.channels.*;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.nio.ByteBuffer;
@@ -115,11 +116,16 @@ public class LoadBalancer {
     }
 
     public static void main(String args[]) {
-        DistributionAlgorithm algorithm = new LowestLoad();
-        LoadBalancer lb = new LoadBalancer(8000, "127.0.0.1", 20, algorithm);
+        DistributionAlgorithm algorithm = new RoundRobin();
+        LoadBalancer lb = new LoadBalancer(8000, "localhost", 2000, algorithm);
 
-        lb.addServer("127.0.0.1", 9000);
-        lb.addServer("127.0.0.1", 9001);
+        ArrayList<String> workServers = new ArrayList<String>(
+                Arrays.asList("158.23.39.138",
+                        "20.226.184.13", "172.202.155.164", "4.155.166.24.", "20.14.105.23"));
+
+        for (int i = 0; i < workServers.size(); ++i) {
+            lb.addServer(workServers.get(i), 9000);
+        }
 
         lb.start();
     }
