@@ -118,7 +118,7 @@ public class LoadBalancer {
 
     public static void main(String args[]) {
         DistributionAlgorithm algorithm = new RoundRobin();
-        LoadBalancer lb = new LoadBalancer(8000, "localhost", 2000, algorithm);
+        LoadBalancer lb = new LoadBalancer(8000, "localhost", 0, algorithm);
 
         int numServers = args.length;
         ArrayList<String> workServers = new ArrayList<String>();
