@@ -49,6 +49,7 @@ public class LoadBalancer {
             this.selector = Selector.open();
 
             this.connectionListener.register(selector, SelectionKey.OP_ACCEPT);
+            System.out.println("Listening on port " + port);
         } catch (Exception e) {
             throw new RuntimeException();
         }
@@ -118,8 +119,8 @@ public class LoadBalancer {
         DistributionAlgorithm algorithm = new LowestLoad();
         LoadBalancer lb = new LoadBalancer(8000, "127.0.0.1", 20, algorithm);
 
+        lb.addServer("20.206.222.32", 9000);
         lb.addServer("127.0.0.1", 9000);
-        lb.addServer("127.0.0.1", 9001);
 
         lb.start();
     }

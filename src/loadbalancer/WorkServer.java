@@ -24,6 +24,8 @@ public class WorkServer {
 
             selector = Selector.open();
             serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
+
+            System.out.println("Listening on port " + port);
         } catch (Exception e) {
             e.printStackTrace();
         }
