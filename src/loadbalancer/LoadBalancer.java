@@ -9,6 +9,8 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.*;
 
 import loadbalancer.algorithms.DistributionAlgorithm;
+import loadbalancer.algorithms.ListConnections;
+import loadbalancer.algorithms.LowestLoad;
 import loadbalancer.algorithms.RoundRobin;
 
 public class LoadBalancer {
@@ -113,10 +115,11 @@ public class LoadBalancer {
     }
 
     public static void main(String args[]) {
-        DistributionAlgorithm algorithm = new RoundRobin();
+        DistributionAlgorithm algorithm = new LowestLoad();
         LoadBalancer lb = new LoadBalancer(8000, "127.0.0.1", 20, algorithm);
 
         lb.addServer("127.0.0.1", 9000);
+        lb.addServer("127.0.0.1", 9001);
 
         lb.start();
     }
